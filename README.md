@@ -3,6 +3,8 @@ A simple random drum machine for Norns
 
 Plays a drum sample from the 606 folder every 'event'
 
+![screenshot](/crash.jpg)
+
 ### Controls
 #### ENC1 - Busyness:
 Number of events per beat
