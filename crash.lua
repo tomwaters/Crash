@@ -17,6 +17,8 @@ engine.name = 'Ack'
 local UI = require "ui"
 
 local crash_id = -1
+local probs = {}
+local num_probs = 0
 
 -- number of events per beat
 local busyness = 2
@@ -36,9 +38,7 @@ local dial_everything
 local dial_nothing
 local dial_busyness
 
-function init()
-  load_samples()
-  
+function init() 
   params:add_number("busyness", "busyness", 1, 4, busyness)
   params:set_action("busyness", function(value) busyness = value end)
   dial_busyness = UI.Dial.new(53, 0, 22, busyness, 1, 4, 0.01, 0, {}, "", "busyness")
@@ -53,8 +53,30 @@ function init()
   params:set_action("nothing", function(value) nothing = value end)
   dial_nothing = UI.Dial.new(86, 30, 22, nothing, 0, 10, 0.01, 0, {}, "", "nothing")
   
+  for i=1,8 do
+    params:add_number("sample_prob_" .. i, "Sample " .. i .. " probability", 0, 10, 10)
+    params:set_action("sample_prob_" .. i, set_probs)
+  end
+
+  load_samples()
   start_stop()
   redraw()
+end
+
+-- set probs array of sample probabilities
+function set_probs()
+  probs = {}
+  local n=1
+  for i=1,samples_loaded do
+    local this_param = params:get("sample_prob_" .. i)
+    if this_param > 0 then 
+      for j=n, n + this_param do
+        probs[j] = i
+      end
+      n = n + this_param
+    end
+  end
+  num_probs = n
 end
 
 -- load the first 8 files in sample_path
@@ -72,6 +94,7 @@ function load_samples()
     end
   end
   samples_loaded = i
+  set_probs()
 end
 
 function start_stop()
@@ -131,7 +154,7 @@ function crash()
 
     if math.random(10) > nothing then
       -- pick a sample and play it
-      local play_sample = math.random(samples_loaded) - 1
+      local play_sample = probs[math.random(num_probs)]
       engine.trig(play_sample)
       
       -- decide if next loop is a fill
